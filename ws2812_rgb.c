@@ -32,6 +32,8 @@ rgb_callback(SoftTimerElem* te)
   uint32_t color = ((uint32_t)g << 24) | 
     ((uint32_t)r << 16) | 
     ((uint32_t)b << 8);
+    ((uint32_t)b << 0);
+  
 
   pio_sm_put_blocking(pio, sm, color);
 

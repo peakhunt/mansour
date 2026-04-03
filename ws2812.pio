@@ -1,14 +1,34 @@
 .program ws2812
 .side_set 1
 
+.define public T1   2
+.define public T2   4
+.define public T3   4
+
+;
+;   |<----- T1 ----->|<----- T2 ----->|<----- T3 ----->|
+; 0 |=================_________________________________|
+; 1 |==================================________________|
+;
+;   1 bit : 1.25us +-600ns = 800KHz
+;   PIO running at 800KHz * 10
+;   one clock = 0.125us
+;   T0H : 0.35us +- 150ns ( 0.2 ~ 0.5)
+;   T1H : 0.7 us +- 150ns ( 0.55 ~ 0.85)
+;   T1 : 2 * 0.125us = 0.25us
+;   T2 : 4 * 0.125us = 0.5us
+;   T3 : 4 * 0.125us = 0.5us
+;   T0H = T1 = 0.25us
+;   T1H = T1 + T2 = 0.75us
+;
 .wrap_target
 bitloop:
-    out x, 1       side 0 [2] ; T0H: 3 cycles (low)
-    jmp !x do_zero side 1 [2] ; T1H: 3 cycles (high)
+    out x, 1       side 0 [T3-1] ; T1L: 4 cycles (low)
+    jmp !x do_zero side 1 [T1-1] ; T0H: 2 cycles (high)
 do_one:
-    jmp  bitloop   side 1 [3] ; T1L: 4 cycles (high) -> Total 10
+    jmp  bitloop   side 1 [T2-1] ; T1H: 4 cycles (high) -> Total 10
 do_zero:
-    nop            side 0 [3] ; T0L: 4 cycles (low)  -> Total 10
+    nop            side 0 [T2-1] ; T0L: 4 cycles (low)  -> Total 10
 .wrap
 
 % c-sdk {
@@ -23,8 +43,8 @@ static inline void ws2812_program_init(PIO pio, uint sm, uint offset, uint pin, 
     sm_config_set_out_shift(&c, false, true, rgbw ? 32 : 24);
     sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
 
-    // 10 cycles per bit means 125MHz / (800kHz * 10) = 15.625 divider
-    float div = (float)clock_get_hz(clk_sys) / (freq * 10);
+    int cycles_per_bit = ws2812_T1 + ws2812_T2 + ws2812_T3;
+    float div = clock_get_hz(clk_sys) / (freq * cycles_per_bit);
     sm_config_set_clkdiv(&c, div);
 
     pio_sm_init(pio, sm, offset, &c);
