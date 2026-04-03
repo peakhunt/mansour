@@ -39,7 +39,7 @@ multicore_setup()
 int
 main()
 {
-  stdio_init_all();
+  //stdio_init_all();
 
   event_dispatcher_init();
   mainloop_timer_init();
