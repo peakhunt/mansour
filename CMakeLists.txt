@@ -18,7 +18,8 @@ set(UTIL_SOURCES util/event_dispatcher.c
                  util/soft_timer.c
                  util/mainloop_timer.c
                  util/shell.c
-                 util/circ_buffer.c)
+                 util/circ_buffer.c
+)
 
 set(APP_SOURCES main.c
                 blue_led.c
@@ -26,6 +27,7 @@ set(APP_SOURCES main.c
                 shell_if_usb.c
                 usb_descriptors.c
                 core1.c
+                shell_commands.c
 )
 
 set(PROJECT_SOURCES

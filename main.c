@@ -9,7 +9,7 @@
 #include "blue_led.h"
 #include "ws2812_rgb.h"
 #include "shell_if_usb.h"
-#include "shell.h"
+#include "shell_commands.h"
 #include "core1.h"
 
 // XXX
@@ -46,9 +46,9 @@ main()
   blue_led_init();
   ws2812_rgb_init();
 
-  shell_init();
-  tusb_init();
+  shell_commands_init();
   shell_if_usb_init();
+  tusb_init();
 
   multicore_setup();
   core1_init();
