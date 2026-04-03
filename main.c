@@ -55,7 +55,6 @@ main()
 
   sys_timer_init();
 
-
   while(true)
   {
     event_dispatcher_dispatch();
