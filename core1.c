@@ -13,7 +13,8 @@ core1_main()
     static uint32_t last_heartbeat = 0;
     uint32_t now = time_us_32();
 
-    if (now - last_heartbeat > 1000000) {
+    if (now - last_heartbeat > 1000000)
+    {
       last_heartbeat = now;
       // Push an Event ID to Core 0
       multicore_fifo_push_blocking(DISPATCH_EVENT_CORE1_DATA);
