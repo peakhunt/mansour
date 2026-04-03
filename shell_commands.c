@@ -94,5 +94,7 @@ shell_command_sysinfo(ShellIntf* intf, int argc, const char** argv)
 void
 shell_commands_init(void)
 {
-  shell_init(_commands, sizeof(_commands)/sizeof(ShellCommand));
+  shell_init(_commands,
+      sizeof(_commands)/sizeof(ShellCommand),
+      "\r\nChinese Puppy> ");
 }

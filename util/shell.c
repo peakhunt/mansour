@@ -27,13 +27,12 @@
 // private variables
 //
 ////////////////////////////////////////////////////////////////////////////////
-static const uint8_t                 _welcome[] = "\r\n**** Welcome ****\r\n";
-static const uint8_t                 _prompt[]  = "\r\nChinese Puppy> ";
 
 static char                   _print_buffer[SHELL_MAX_COLUMNS_PER_LINE + 1];
 
 static LIST_HEAD(_shell_intf_list);
 
+static const char* _prompt;
 static const ShellCommand* _commands = NULL;
 static int _num_cmds = 0;
 
@@ -113,10 +112,11 @@ shell_printf(ShellIntf* intf, const char* fmt, ...)
 //
 ////////////////////////////////////////////////////////////////////////////////
 void
-shell_init(const ShellCommand* commands, int num_cmds)
+shell_init(const ShellCommand* commands, int num_cmds, const char* prompt)
 {
   _commands = commands;
   _num_cmds = num_cmds;
+  _prompt = prompt;
 }
 
 void

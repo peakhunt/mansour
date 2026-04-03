@@ -32,7 +32,7 @@ typedef struct
   shell_command_handler handler;
 } ShellCommand;
 
-extern void shell_init(const ShellCommand* cmds, int num_cmd);
+extern void shell_init(const ShellCommand* cmds, int num_cmd, const char* prompt);
 extern void shell_handle_rx(ShellIntf* intf);
 extern void shell_if_register(ShellIntf* intf);
 extern void shell_printf(ShellIntf* intf, const char* fmt, ...) __attribute__((format(gnu_printf, 2, 3)));
