@@ -12,9 +12,9 @@
 #include "shell.h"
 #include "core1.h"
 
-//
+// XXX
 // This runs on Core 0
-// //
+//
 static void
 isr_fifo_handler()
 {
