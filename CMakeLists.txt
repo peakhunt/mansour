@@ -44,6 +44,7 @@ set(PROJECT_LIBRARIES
     hardware_pio
     hardware_clocks
     hardware_exception
+    hardware_dma
     m
     hardware_exception
     hardware_sync)
