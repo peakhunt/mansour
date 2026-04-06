@@ -3,9 +3,9 @@
 #include "tm1638.h"
 #include "tm1638_demo.h"
 
-#define READ_UPDATE_INTERVAL      50
-#define SEG_UPDATE_INTERVAL       100
-#define WAIT_INTERVAL             10
+#define READ_UPDATE_INTERVAL      25
+#define SEG_UPDATE_INTERVAL       50
+#define WAIT_INTERVAL             2
 
 typedef enum
 {
