@@ -170,7 +170,6 @@ tm1638_start_update(uint8_t *new_digits, uint8_t new_leds, tm1638_cb_t cb)
   // Kick off the PIO: Pull STB low and send first command
   gpio_put(PIN_STB, 0);
   pio_sm_exec(pio, pio_sm, pio_encode_jmp(pio_offset + tm1638_offset_write_8));
-  pio_sm_clear_fifos(pio, pio_sm);
   pio_sm_put(pio, pio_sm, 0x40); 
 }
 
@@ -188,7 +187,6 @@ tm1638_start_button_read(tm1638_cb_t cb)
 
   // 2. Point PIO to the WRITE routine to send the "Read" command
   pio_sm_exec(pio, pio_sm, pio_encode_jmp(pio_offset + tm1638_offset_write_8));
-  pio_sm_clear_fifos(pio, pio_sm);
   pio_sm_put(pio, pio_sm, 0x42); 
 }
 
