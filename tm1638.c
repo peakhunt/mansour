@@ -131,7 +131,6 @@ static void tm1638_pio_event_handler(uint32_t e)
 
     case 1 ... 3: // Middle bytes
       tm.keys_raw[tm.step - 2] = (uint8_t)(pio_sm_get(pio, pio_sm) >> 24);
-      //pio_sm_exec(pio, pio_sm, pio_encode_jmp(pio_offset + tm1638_offset_read_8));
       pio_sm_put(pio, pio_sm, 0x00);  // send dummy to fick off read
       break;
 
