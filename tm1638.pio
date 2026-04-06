@@ -53,8 +53,8 @@ tm1638_program_init(PIO pio, uint sm, uint offset, uint clk_pin, uint dio_pin)
   pio_sm_set_consecutive_pindirs(pio, sm, dio_pin, 1, true);
   pio_sm_set_consecutive_pindirs(pio, sm, clk_pin, 1, true);
 
-  // Slow it down to ~500kHz for stability
-  float div = (float)clock_get_hz(clk_sys) / 1000000;
+  // Slow it down to ~1MHz for stability
+  float div = (float)clock_get_hz(clk_sys) / 2000000;
   sm_config_set_clkdiv(&c, div);
 
   pio_sm_init(pio, sm, offset, &c);
