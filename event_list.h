@@ -3,5 +3,6 @@
 
 #define DISPATCH_EVENT_CORE1_DATA           0
 #define DISPATCH_EVENT_TIMER_TICK           1
+#define DISPATCH_EVENT_TM1638_PIO_IRQ       2
 
 #endif //!__EVENT_LIST_DEF_H__

@@ -28,6 +28,8 @@ set(APP_SOURCES main.c
                 usb_descriptors.c
                 core1.c
                 shell_commands.c
+                tm1638.c
+                tm1638_demo.c
 )
 
 set(PROJECT_SOURCES
@@ -54,6 +56,7 @@ add_compile_definitions(SYS_CLK_MHZ=200)
 add_executable(${TARGET_NAME} ${PROJECT_SOURCES})
 
 pico_generate_pio_header(${TARGET_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/ws2812.pio)
+pico_generate_pio_header(${TARGET_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/tm1638.pio)
 
 target_include_directories(${TARGET_NAME} PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}

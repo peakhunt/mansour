@@ -85,7 +85,6 @@ shell_command_sysinfo(ShellIntf* intf, int argc, const char** argv)
   shell_printf(intf, "Total SRAM     : %lu Bytes\r\n", total_ram);
   shell_printf(intf, "Approx. Free   : %lu Bytes\r\n", free_approx);
 }
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // init

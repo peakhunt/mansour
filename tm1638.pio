@@ -1,0 +1,63 @@
+.program tm1638
+.side_set 1
+
+; --- WRITE 8 BITS ---
+public write_8:
+    pull block          side 0
+    set pindirs, 1      side 0  ; DIO to Output
+    set x, 7            side 0  
+bitloop_out:
+    out pins, 1         side 0  ; Shift 1 bit, CLK Low
+    jmp x-- bitloop_out side 1  ; CLK High, loop 8x
+    irq 0               side 1  ; Signal Mansour Loop Event
+    jmp write_8         side 0
+
+; --- READ 8 BITS ---
+public read_8:
+    pull block          side 0
+    set pindirs, 0      side 0  ; DIO to Input
+    set x, 7            side 0  
+bitloop_in:
+    nop                 side 0  ; CLK Low
+    in pins, 1          side 1  ; Sample DIO, CLK High
+    jmp x-- bitloop_in  side 1  ; Loop 8x
+    push block          side 0  ;
+    irq 0               side 0  ; Signal Mansour Loop Event
+    jmp read_8          side 0
+
+% c-sdk {
+#include "hardware/clocks.h"
+
+static inline void
+tm1638_program_init(PIO pio, uint sm, uint offset, uint clk_pin, uint dio_pin)
+{
+  pio_sm_config c = tm1638_program_get_default_config(offset);
+
+  // Map ALL pin roles to the same DIO pin
+  sm_config_set_out_pins(&c, dio_pin, 1);
+  sm_config_set_in_pins(&c, dio_pin);
+  sm_config_set_set_pins(&c, dio_pin, 1);
+    
+  // Map Clock pin
+  sm_config_set_sideset_pins(&c, clk_pin);
+
+  // Configure Shift Registers: LSB First, Autopush/pull enabled at 8 bits
+  sm_config_set_out_shift(&c, true, false, 8);
+  sm_config_set_in_shift(&c, true, false, 8);
+
+  // Initialize Pins
+  pio_gpio_init(pio, dio_pin);
+  pio_gpio_init(pio, clk_pin);
+    
+  // Start with DIO as Output, CLK as Output
+  pio_sm_set_consecutive_pindirs(pio, sm, dio_pin, 1, true);
+  pio_sm_set_consecutive_pindirs(pio, sm, clk_pin, 1, true);
+
+  // Slow it down to ~500kHz for stability
+  float div = (float)clock_get_hz(clk_sys) / 1000000;
+  sm_config_set_clkdiv(&c, div);
+
+  pio_sm_init(pio, sm, offset, &c);
+  pio_sm_set_enabled(pio, sm, true);
+}
+%}
