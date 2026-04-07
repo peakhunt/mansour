@@ -5,11 +5,13 @@
 
 #include "hardware/clocks.h"
 #include "pico/malloc.h"
+#include "motor_demo.h"
 
 static void shell_command_help(ShellIntf* intf, int argc, const char** argv);
 static void shell_command_version(ShellIntf* intf, int argc, const char** argv);
 static void shell_command_uptime(ShellIntf* intf, int argc, const char** argv);
 static void shell_command_sysinfo(ShellIntf* intf, int argc, const char** argv);
+static void shell_command_renc(ShellIntf* intf, int argc, const char** argv);
 
 static const ShellCommand _commands[] = 
 {
@@ -32,6 +34,11 @@ static const ShellCommand _commands[] =
     "sysinfo",
     "show system info",
     shell_command_sysinfo,
+  },
+  {
+    "renc",
+    "show rotary encoder info",
+    shell_command_renc,
   },
 };
 
@@ -85,6 +92,14 @@ shell_command_sysinfo(ShellIntf* intf, int argc, const char** argv)
   shell_printf(intf, "Total SRAM     : %lu Bytes\r\n", total_ram);
   shell_printf(intf, "Approx. Free   : %lu Bytes\r\n", free_approx);
 }
+
+static void
+shell_command_renc(ShellIntf* intf, int argc, const char** argv)
+{
+  shell_printf(intf, "\r\n");
+  shell_printf(intf, "Rotary Encoder   : %d \r\n", motor_rotary_encoder_get());
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // init

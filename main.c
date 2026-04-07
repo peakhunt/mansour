@@ -12,6 +12,7 @@
 #include "shell_commands.h"
 #include "core1.h"
 #include "tm1638_demo.h"
+#include "motor_demo.h"
 
 // XXX
 // This runs on Core 0
@@ -54,6 +55,8 @@ main()
   multicore_setup();
   core1_init();
   tm1638_demo_init();
+
+  motor_init();
 
   sys_timer_init();
 

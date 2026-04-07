@@ -30,6 +30,8 @@ set(APP_SOURCES main.c
                 shell_commands.c
                 tm1638.c
                 tm1638_demo.c
+                rotary_encoder.c
+                motor_demo.c
 )
 
 set(PROJECT_SOURCES
