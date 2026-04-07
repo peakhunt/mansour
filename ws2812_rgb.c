@@ -162,6 +162,8 @@ void
 ws2812_rgb_init(void)
 {
   uint offset = pio_add_program(pio, &ws2812_program);
+  sm = pio_claim_unused_sm(pio, true);
+  sm2 = pio_claim_unused_sm(pio, true);
   ws2812_program_init(pio, sm, offset, 23, 800000, false);
   ws2812_program_init(pio, sm2, offset, 22, 800000, false);
 

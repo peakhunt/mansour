@@ -6,12 +6,14 @@
 #include "hardware/clocks.h"
 #include "pico/malloc.h"
 #include "motor_demo.h"
+#include "dht11.h"
 
 static void shell_command_help(ShellIntf* intf, int argc, const char** argv);
 static void shell_command_version(ShellIntf* intf, int argc, const char** argv);
 static void shell_command_uptime(ShellIntf* intf, int argc, const char** argv);
 static void shell_command_sysinfo(ShellIntf* intf, int argc, const char** argv);
 static void shell_command_renc(ShellIntf* intf, int argc, const char** argv);
+static void shell_command_dht11(ShellIntf* intf, int argc, const char** argv);
 
 static const ShellCommand _commands[] = 
 {
@@ -39,6 +41,11 @@ static const ShellCommand _commands[] =
     "renc",
     "show rotary encoder info",
     shell_command_renc,
+  },
+  {
+    "dht11",
+    "show dht11 temperature and humidity",
+    shell_command_dht11,
   },
 };
 
@@ -98,6 +105,21 @@ shell_command_renc(ShellIntf* intf, int argc, const char** argv)
 {
   shell_printf(intf, "\r\n");
   shell_printf(intf, "Rotary Encoder   : %d \r\n", motor_rotary_encoder_get());
+}
+
+static void
+shell_command_dht11(ShellIntf* intf, int argc, const char** argv)
+{
+  float t;
+  uint8_t h;
+  uint32_t attempt, fail;
+
+  dht11_get(&t, &h, &attempt, &fail);
+  shell_printf(intf, "\r\n");
+  shell_printf(intf, "DHT11 Temperature: %.1f \r\n", t);
+  shell_printf(intf, "DHT11 Humidity   : %d %\r\n", h);
+  shell_printf(intf, "DHT11 Attempt    : %ld %\r\n", attempt);
+  shell_printf(intf, "DHT11 Fail       : %ld %\r\n", fail);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

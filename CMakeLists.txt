@@ -32,6 +32,7 @@ set(APP_SOURCES main.c
                 tm1638_demo.c
                 rotary_encoder.c
                 motor_demo.c
+                dht11.c
 )
 
 set(PROJECT_SOURCES
@@ -59,6 +60,7 @@ add_executable(${TARGET_NAME} ${PROJECT_SOURCES})
 
 pico_generate_pio_header(${TARGET_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/ws2812.pio)
 pico_generate_pio_header(${TARGET_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/tm1638.pio)
+pico_generate_pio_header(${TARGET_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/dht11.pio)
 
 target_include_directories(${TARGET_NAME} PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}

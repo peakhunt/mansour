@@ -1,0 +1,48 @@
+.program dht11
+
+.wrap_target
+  pull block          ; 1. Wait for CPU to push '39' (the 40-bit count)
+  mov y, osr          ; 2. Load loop counter
+  wait 0 pin 0        ; 3. ACK Low
+  wait 1 pin 0        ; 4. ACK High
+
+bit_loop:
+  wait 0 pin 0        ; 5. Wait for bit start (Low phase)
+  wait 1 pin 0        ; 6. Wait for bit High phase
+  set x, 19           ; 7. STROBE: 20 cycles * 2us = 40us (Perfect mid-point)
+    
+delay_loop:
+  jmp x--, delay_loop ; 8. Manual delay loop for determinism
+  
+  in pins, 1          ; 9. Sample bit: 1=Long, 0=Short
+  jmp y--, bit_loop   ; 10. Loop 40 times
+
+  push block          ; 11. Data First
+  irq 1               ; 12. Signal Second
+.wrap
+
+
+% c-sdk {
+#include "hardware/clocks.h"
+#include "hardware/pio.h"
+#include "hardware/irq.h"
+
+static inline void
+dht11_program_init(PIO pio, uint sm, uint offset, uint pin)
+{
+  pio_sm_config c = dht11_program_get_default_config(offset);
+    
+  // Set the DHT pin as Input, but allow side-set/pindirs to flip it
+  pio_gpio_init(pio, pin);
+  sm_config_set_in_pins(&c, pin);
+    
+  // Autopush at 32 bits, Shift Right (MSB first from DHT)
+  sm_config_set_in_shift(&c, false, true, 32);
+    
+  float div = (float)clock_get_hz(clk_sys) / 500000;
+  sm_config_set_clkdiv(&c, div);
+
+  pio_sm_init(pio, sm, offset, &c);
+  pio_sm_set_enabled(pio, sm, true);
+}
+%}
