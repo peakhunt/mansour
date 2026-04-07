@@ -94,7 +94,7 @@ int32_t
 get_encoder_count(encoder_t* enc)
 {
   //uint32_t status = save_and_disable_interrupts();
-  int32_t val = enc->count;
+  int32_t val = enc->count/4;
   //restore_interrupts(status);
   return val;
 }
