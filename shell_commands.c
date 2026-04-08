@@ -170,7 +170,7 @@ shell_command_foc(ShellIntf* intf, int argc, const char** argv)
     shell_printf(intf, "P Gain           : %.4f\r\n", p_gain);
     shell_printf(intf, "I Gain           : %.4f\r\n", i_gain);
     shell_printf(intf, "D Gain           : %.4f\r\n", d_gain);
-    shell_printf(intf, "Voltate Limit    : %.1f%\r\n", v_limit);
+    shell_printf(intf, "Voltate Limit    : %.1f %%\r\n", v_limit);
   }
   else if(strcmp(argv[1], "target") == 0 && argc == 3)
   {
