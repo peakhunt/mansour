@@ -9,10 +9,12 @@
 #define DHT_PIN 15
 
 #define DHT_READ_INTERVAL       500
+#define DHT_READ_FAIL_INTERVAL  3000
 #define DHT_PIN_LOW_INTERVAL    30
 
 static SoftTimerElem  _t1;      // read interval timer
 static SoftTimerElem  _t2;      // DHT11 pin low timer to start reading
+static SoftTimerElem  _t_fail;
 
 // MBS Class Data Structure
 static PIO _pio;
@@ -99,6 +101,7 @@ dht11_pio_event_handler(uint32_t e)
 {
   dht_handle_read_data();
 
+  mainloop_timer_cancel(&_t_fail);
   mainloop_timer_schedule(&_t1, DHT_READ_INTERVAL);
 }
 
@@ -107,12 +110,24 @@ dht11_start_read_timer_callback(SoftTimerElem* te)
 {
   dht_start_read();
   mainloop_timer_schedule(&_t2, DHT_PIN_LOW_INTERVAL);
+  mainloop_timer_schedule(&_t_fail, DHT_READ_FAIL_INTERVAL);
 }
 
 static void
 dht11_pin_low_timer_callback(SoftTimerElem* te)
 {
   dht_initiaze_pio();
+}
+
+static void
+dht11_read_fail_timer_callback(SoftTimerElem* te)
+{
+  _fail++;
+  pio_sm_exec(_pio, _sm, pio_encode_jmp(_offset));
+  pio_sm_clear_fifos(_pio, _sm);
+  pio_sm_restart(_pio, _sm);
+
+  dht11_start_read_timer_callback(NULL);
 }
 
 void 
@@ -137,8 +152,10 @@ dht11_init(void)
 
   soft_timer_init_elem(&_t1);
   soft_timer_init_elem(&_t2);
+  soft_timer_init_elem(&_t_fail);
   _t1.cb = dht11_start_read_timer_callback;
   _t2.cb = dht11_pin_low_timer_callback;
+  _t_fail.cb = dht11_read_fail_timer_callback;
 
   mainloop_timer_schedule(&_t1, DHT_READ_INTERVAL);
 
