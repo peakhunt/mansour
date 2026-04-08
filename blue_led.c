@@ -3,6 +3,7 @@
 #include "event_dispatcher.h"
 #include "event_list.h"
 #include "blue_led.h"
+#include "mansour_foc.h"
 
 #define LED_PIN         25
 
@@ -33,6 +34,7 @@ static void
 handle_event_from_core1(uint32_t event)
 {
   gpio_put(LED_PIN, !gpio_get(LED_PIN));
+  mansour_foc_calc_hz(); // dirty hack for test
 }
 
 void

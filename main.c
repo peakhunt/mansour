@@ -14,6 +14,7 @@
 #include "tm1638_demo.h"
 #include "motor_demo.h"
 #include "dht11.h"
+#include "mansour_foc.h"
 
 // XXX
 // This runs on Core 0
@@ -58,6 +59,7 @@ main()
   tm1638_demo_init();
   dht11_init();
   motor_init();
+  mansour_foc_init();
 
   sys_timer_init();
 

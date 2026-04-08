@@ -33,6 +33,8 @@ set(APP_SOURCES main.c
                 rotary_encoder.c
                 motor_demo.c
                 dht11.c
+                as5600.c
+                mansour_foc.c
 )
 
 set(PROJECT_SOURCES
@@ -50,6 +52,8 @@ set(PROJECT_LIBRARIES
     hardware_clocks
     hardware_exception
     hardware_dma
+    hardware_i2c
+    hardware_pwm
     m
     hardware_exception
     hardware_sync)
