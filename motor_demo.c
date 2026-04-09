@@ -149,7 +149,7 @@ foc_pwm_init(void)
 void
 motor_init(void)
 {
-  encoder_init(&_enc0, ENC_CLK_PIN, ENC_DT_PIN, false);
+  encoder_init(&_enc0, ENC_CLK_PIN, ENC_DT_PIN, true);
   foc_pwm_init();
   as5600_init();
 
