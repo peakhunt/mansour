@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include <math.h>
-#include "hardware/pwm.h"
-#include "hardware/clocks.h"
 #include "pico/stdlib.h"
 #include "mansour_foc.h"
 
