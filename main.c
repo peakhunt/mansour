@@ -59,7 +59,6 @@ main()
   tm1638_demo_init();
   dht11_init();
   motor_init();
-  mansour_foc_init();
 
   sys_timer_init();
 

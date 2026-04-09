@@ -1,19 +1,183 @@
+#include "hardware/pwm.h"
+#include "pico/stdlib.h"
 #include "motor_demo.h"
+#include "mansour_foc.h"
+#include "as5600.h"
 #include "rotary_encoder.h"
+#include "mainloop_timer.h"
 
 #define ENC_CLK_PIN 10
 #define ENC_DT_PIN  11
 
-static encoder_t    _enc0;
+#define PIN_PHASE_A    0
+#define PIN_PHASE_B    1
+#define PIN_PHASE_C    2
+
+// Target: 20kHz Center-Aligned (Phase-Correct) SPWM
+// F_sys = 200MHz
+// F_pwm = F_sys / (2 * TOP * DIV)
+// 20,000 = 200,000,000 / (2 * 5000 * 1)
+#define PWM_TOP         5000 
+
+#define TIMER_FOC_UPDATE_INTERVAL       1
+#define TIMER_LOOP_COUNT                1000
+
+static float foc_read_angle(void);
+static void foc_set_pwm(uint32_t chnl, uint16_t v);
+
+static uint16_t         _hz;
+static encoder_t        _enc0;
+static MansourFOC       _foc =
+{
+  .pole_pairs     = 7,
+  .p_gain         = 8.0f,
+  .i_gain         = 0.5f,
+  .d_gain         = 0.01f,
+  .i_error        = 0.0,
+  .voltage_limit  = 10.0f,
+  .target         = 0.0f,
+  .last_time      = 0,
+  .pin_phase_a    = PIN_PHASE_A,
+  .pin_phase_b    = PIN_PHASE_B,
+  .pin_phase_c    = PIN_PHASE_C,
+  .pwm_top        = PWM_TOP,
+  .read_angle     = foc_read_angle,
+  .set_pwm        = foc_set_pwm,
+};
+
+static SoftTimerElem    _t_foc_update;
+static SoftTimerElem    _t_loop_count;
+
+static uint16_t         _hz;
+static uint16_t         _count = 0;
+
+static void
+timer_loop_count(SoftTimerElem* e)
+{
+  _hz = _count;
+  _count = 0;
+  //mainloop_timer_schedule(&_t_loop_count, TIMER_LOOP_COUNT);
+}
+
+static void
+timer_foc_update(SoftTimerElem* e)
+{
+  mansour_foc_update(&_foc);
+  mainloop_timer_schedule(&_t_foc_update, TIMER_FOC_UPDATE_INTERVAL);
+  _count++;
+}
+
+static float
+foc_read_angle(void)
+{
+  uint16_t raw = as5600_read();
+  return ((float)raw * 360.0f) / 4096.0f;
+} 
+
+static void
+foc_set_pwm(uint32_t chnl, uint16_t v)
+{
+  pwm_set_gpio_level(chnl, v);
+}
+
+static void
+foc_pwm_init(void)
+{
+  // 1. Hardware Pin Muxing
+  gpio_set_function(PIN_PHASE_A, GPIO_FUNC_PWM);
+  gpio_set_function(PIN_PHASE_B, GPIO_FUNC_PWM);
+  gpio_set_function(PIN_PHASE_C, GPIO_FUNC_PWM);
+
+  // 2. Identify Slices
+  uint slice_0 = pwm_gpio_to_slice_num(PIN_PHASE_A); // Handles GP0 & GP1
+  uint slice_1 = pwm_gpio_to_slice_num(PIN_PHASE_C); // Handles GP2
+
+  // 3. Configure Slice 0 (Phases A & B)
+  pwm_config config0 = pwm_get_default_config();
+  pwm_config_set_phase_correct(&config0, true);
+  pwm_config_set_wrap(&config0, PWM_TOP);
+  pwm_config_set_clkdiv(&config0, 1.0f); // No division for max resolution
+  pwm_init(slice_0, &config0, false);
+
+  // 4. Configure Slice 1 (Phase C)
+  pwm_config config1 = pwm_get_default_config();
+  pwm_config_set_phase_correct(&config1, true);
+  pwm_config_set_wrap(&config1, PWM_TOP);
+  pwm_config_set_clkdiv(&config1, 1.0f);
+  pwm_init(slice_1, &config1, false);
+
+  // 5. Center-Align Reset & Synchronous Enable
+  // We clear the counters to 0 first to ensure they start in perfect phase
+  pwm_set_counter(slice_0, 0);
+  pwm_set_counter(slice_1, 0);
+
+  // Start both slices at the exact same clock cycle using the enable mask
+  pwm_set_mask_enabled((1 << slice_0) | (1 << slice_1));
+
+  // 6. Set Initial Duty to 0 (Safe State)
+  pwm_set_gpio_level(PIN_PHASE_A, 0);
+  pwm_set_gpio_level(PIN_PHASE_B, 0);
+  pwm_set_gpio_level(PIN_PHASE_C, 0);
+}
 
 void
 motor_init(void)
 {
   encoder_init(&_enc0, ENC_CLK_PIN, ENC_DT_PIN, true);
+  foc_pwm_init();
+  as5600_init();
+
+  mansour_foc_init(&_foc);
+
+  soft_timer_init_elem(&_t_foc_update);
+  _t_foc_update.cb = timer_foc_update;
+  soft_timer_init_elem(&_t_loop_count);
+  _t_loop_count.cb = timer_loop_count;
+
+  mainloop_timer_schedule(&_t_foc_update, TIMER_FOC_UPDATE_INTERVAL);
+  //mainloop_timer_schedule(&_t_loop_count, TIMER_LOOP_COUNT);
+}
+
+void
+motor_foc_calc_hz(void)
+{
+  timer_loop_count(NULL);
 }
 
 int32_t
 motor_rotary_encoder_get(void)
 {
   return get_encoder_count(&_enc0);
+}
+
+void
+motor_get_foc_info(uint16_t* hz, float* t_angle,
+    float* t_actual, float* p_gain, float* d_gain, float* i_gain,
+    float* v_limit)
+{
+  *hz = _hz;
+  *t_angle = _foc.target;
+  *t_actual = _foc.last_actual;
+  *p_gain = _foc.p_gain;
+  *i_gain = _foc.i_gain;
+  *d_gain = _foc.d_gain;
+  *v_limit = _foc.voltage_limit;
+}
+
+void
+motor_foc_set_target_angle(float angle)
+{
+  mansour_foc_set_target_angle(&_foc, angle);
+}
+
+void
+motor_foc_set_vlimit(float vlimit)
+{
+  mansour_foc_set_vlimit(&_foc, vlimit);
+}
+
+void
+motor_foc_set_gain(float p, float i, float d)
+{
+  mansour_foc_set_gain(&_foc, p, i, d);
 }
