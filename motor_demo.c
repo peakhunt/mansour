@@ -1,3 +1,4 @@
+#include <math.h>
 #include "hardware/pwm.h"
 #include "pico/stdlib.h"
 #include "motor_demo.h"
@@ -5,6 +6,8 @@
 #include "as5600.h"
 #include "rotary_encoder.h"
 #include "mainloop_timer.h"
+#include "event_list.h"
+#include "event_dispatcher.h"
 
 #define ENC_CLK_PIN 10
 #define ENC_DT_PIN  11
@@ -51,6 +54,8 @@ static SoftTimerElem    _t_loop_count;
 static uint16_t         _hz;
 static uint16_t         _count = 0;
 
+static int32_t          _enc_val = 0;
+
 static void
 timer_loop_count(SoftTimerElem* e)
 {
@@ -78,6 +83,27 @@ static void
 foc_set_pwm(uint32_t chnl, uint16_t v)
 {
   pwm_set_gpio_level(chnl, v);
+}
+
+static void
+handle_renc_change(uint32_t event)
+{
+  int32_t rv = get_encoder_count(&_enc0);
+  int32_t diff = rv - _enc_val;
+
+  _enc_val = rv;
+
+  float move_angle = 10 * diff;
+  float angle = _foc.target + move_angle;
+
+  if(angle < 0)
+  {
+    angle += 360;
+  }
+
+  angle = fmodf(angle, 360);
+
+  mansour_foc_set_target_angle(&_foc, angle);
 }
 
 static void
@@ -123,7 +149,7 @@ foc_pwm_init(void)
 void
 motor_init(void)
 {
-  encoder_init(&_enc0, ENC_CLK_PIN, ENC_DT_PIN, true);
+  encoder_init(&_enc0, ENC_CLK_PIN, ENC_DT_PIN, false);
   foc_pwm_init();
   as5600_init();
 
@@ -136,6 +162,8 @@ motor_init(void)
 
   mainloop_timer_schedule(&_t_foc_update, TIMER_FOC_UPDATE_INTERVAL);
   //mainloop_timer_schedule(&_t_loop_count, TIMER_LOOP_COUNT);
+
+  event_register_handler(handle_renc_change, DISPATCH_EVENT_RENC_CHANGE);
 }
 
 void

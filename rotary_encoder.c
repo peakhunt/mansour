@@ -1,6 +1,8 @@
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include "rotary_encoder.h"
+#include "event_list.h"
+#include "event_dispatcher.h"
 
 #define MAX_ENCODERS      4
 
@@ -31,6 +33,9 @@ handle_encoder_irq(encoder_t* enc)
   {
     enc->count += move;
     enc->last_status = new_status; // Only update state on VALID moves
+                                   //
+    if((enc->count % 4) == 0)
+      event_set(1 << DISPATCH_EVENT_RENC_CHANGE);
   }
   // If move is 0 (illegal jump like 00->11), we DON'T update last_status.
   // This "traps" the state machine until the pins settle into a valid state.
