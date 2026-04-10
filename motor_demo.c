@@ -67,7 +67,9 @@ static SoftTimerElem    _t_loop_count;
 static struct repeating_timer _timer;
 
 static uint32_t                 _hz;
-#if (MOTOR_FOC_UPDATE_SOURCE_PWM_IRQ == 1) || (MOTOR_FOC_UPDATE_SOURCE_REPEATING_TIMER == 1) || (MOTOR_FOC_UPDATE_CORE1 == 1)
+#if (MOTOR_FOC_UPDATE_SOURCE_PWM_IRQ == 1) ||           \
+    (MOTOR_FOC_UPDATE_SOURCE_REPEATING_TIMER == 1) ||   \
+    (MOTOR_FOC_UPDATE_CORE1 == 1)
 static volatile uint32_t        _count = 0;
 #else
 static uint32_t                 _count = 0;
