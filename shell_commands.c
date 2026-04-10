@@ -142,7 +142,7 @@ shell_command_foc(ShellIntf* intf, int argc, const char** argv)
 
   if(strcmp(argv[1], "info") == 0)
   {
-    uint16_t  hz;
+    uint32_t  hz;
     float     t_angle, t_actual,
               p_gain, d_gain, i_gain,
               v_limit;

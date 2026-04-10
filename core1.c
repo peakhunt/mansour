@@ -2,6 +2,10 @@
 #include "event_list.h"
 #include "hardware/irq.h"
 
+__attribute__((weak)) void core1_run(void)
+{
+}
+
 // This runs ONLY on Core 1
 static void
 core1_main()
@@ -13,6 +17,7 @@ core1_main()
     static uint32_t last_heartbeat = 0;
     uint32_t now = time_us_32();
 
+    core1_run();
     if (now - last_heartbeat > 1000000)
     {
       last_heartbeat = now;

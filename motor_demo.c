@@ -1,5 +1,6 @@
 #include <math.h>
 #include "hardware/pwm.h"
+#include "hardware/timer.h"
 #include "pico/stdlib.h"
 #include "motor_demo.h"
 #include "mansour_foc.h"
@@ -25,10 +26,23 @@
 #define TIMER_FOC_UPDATE_INTERVAL       1
 #define TIMER_LOOP_COUNT                1000
 
+// 4kHz = 250 microseconds
+#define TIMER_REPEATING_FOC_UPDATE_US 125
+
+//
+// enable only one of these or it will be screwed up
+// 
+// if you enable IRQ based update source, don't forget
+// to modify mansource_foc.h
+//
+#define MOTOR_FOC_UPDATE_SOURCE_MAINLOOP_TIMER      (1)
+#define MOTOR_FOC_UPDATE_SOURCE_REPEATING_TIMER     (0)
+#define MOTOR_FOC_UPDATE_SOURCE_PWM_IRQ             (0)
+#define MOTOR_FOC_UPDATE_CORE1                      (0)
+
 static float foc_read_angle(void);
 static void foc_set_pwm(uint32_t chnl, uint16_t v);
 
-static uint16_t         _hz;
 static encoder_t        _enc0;
 static MansourFOC       _foc =
 {
@@ -50,11 +64,15 @@ static MansourFOC       _foc =
 
 static SoftTimerElem    _t_foc_update;
 static SoftTimerElem    _t_loop_count;
+static struct repeating_timer _timer;
 
-static uint16_t         _hz;
-static uint16_t         _count = 0;
-
-static int32_t          _enc_val = 0;
+static uint32_t                 _hz;
+#if (MOTOR_FOC_UPDATE_SOURCE_PWM_IRQ == 1) || (MOTOR_FOC_UPDATE_SOURCE_REPEATING_TIMER == 1) || (MOTOR_FOC_UPDATE_CORE1 == 1)
+static volatile uint32_t        _count = 0;
+#else
+static uint32_t                 _count = 0;
+#endif
+static int32_t                  _enc_val = 0;
 
 static void
 timer_loop_count(SoftTimerElem* e)
@@ -64,13 +82,37 @@ timer_loop_count(SoftTimerElem* e)
   //mainloop_timer_schedule(&_t_loop_count, TIMER_LOOP_COUNT);
 }
 
+#if MOTOR_FOC_UPDATE_SOURCE_REPEATING_TIMER == 1
+static bool
+foc_update_handler(struct repeating_timer *t)
+{
+  mansour_foc_update(&_foc);
+  _count++;
+  return true; // Keep the timer repeating
+}
+#elif MOTOR_FOC_UPDATE_SOURCE_PWM_IRQ == 1
 static void
-timer_foc_update(SoftTimerElem* e)
+foc_update_handler(void)
+{
+  pwm_clear_irq(0);
+  mansour_foc_update(&_foc);
+  _count++;
+}
+#elif MOTOR_FOC_UPDATE_SOURCE_MAINLOOP_TIMER == 1
+static void
+foc_update_handler(SoftTimerElem* e)
 {
   mansour_foc_update(&_foc);
   mainloop_timer_schedule(&_t_foc_update, TIMER_FOC_UPDATE_INTERVAL);
   _count++;
 }
+#elif MOTOR_FOC_UPDATE_CORE1 == 1
+void core1_run(void)
+{
+  mansour_foc_update(&_foc);
+  _count++;
+}
+#endif
 
 static float
 foc_read_angle(void)
@@ -146,6 +188,27 @@ foc_pwm_init(void)
   pwm_set_gpio_level(PIN_PHASE_C, 0);
 }
 
+static void
+motor_setup_foc_update_source(void)
+{
+#if MOTOR_FOC_UPDATE_SOURCE_MAINLOOP_TIMER == 1
+  soft_timer_init_elem(&_t_foc_update);
+  _t_foc_update.cb = foc_update_handler;
+  soft_timer_init_elem(&_t_loop_count);
+  _t_loop_count.cb = timer_loop_count;
+
+  mainloop_timer_schedule(&_t_foc_update, TIMER_FOC_UPDATE_INTERVAL);
+  //mainloop_timer_schedule(&_t_loop_count, TIMER_LOOP_COUNT);
+#elif MOTOR_FOC_UPDATE_SOURCE_REPEATING_TIMER == 1
+  add_repeating_timer_us(-TIMER_REPEATING_FOC_UPDATE_US, foc_update_handler, NULL, &_timer);
+#elif MOTOR_FOC_UPDATE_SOURCE_PWM_IRQ == 1
+  uint slice_0 = pwm_gpio_to_slice_num(PIN_PHASE_A); // Handles GP0 & GP1
+  pwm_set_irq_enabled(slice_0, true);
+  irq_set_exclusive_handler(PWM_IRQ_WRAP, foc_update_handler);
+  irq_set_enabled(PWM_IRQ_WRAP, true);
+#endif
+}
+
 void
 motor_init(void)
 {
@@ -155,15 +218,9 @@ motor_init(void)
 
   mansour_foc_init(&_foc);
 
-  soft_timer_init_elem(&_t_foc_update);
-  _t_foc_update.cb = timer_foc_update;
-  soft_timer_init_elem(&_t_loop_count);
-  _t_loop_count.cb = timer_loop_count;
-
-  mainloop_timer_schedule(&_t_foc_update, TIMER_FOC_UPDATE_INTERVAL);
-  //mainloop_timer_schedule(&_t_loop_count, TIMER_LOOP_COUNT);
-
   event_register_handler(handle_renc_change, DISPATCH_EVENT_RENC_CHANGE);
+
+  motor_setup_foc_update_source();
 }
 
 void
@@ -179,7 +236,7 @@ motor_rotary_encoder_get(void)
 }
 
 void
-motor_get_foc_info(uint16_t* hz, float* t_angle,
+motor_get_foc_info(uint32_t* hz, float* t_angle,
     float* t_actual, float* p_gain, float* d_gain, float* i_gain,
     float* v_limit)
 {
