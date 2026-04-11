@@ -55,11 +55,11 @@ main()
   tusb_init();
 
   multicore_setup();
-  core1_init();
   tm1638_demo_init();
   dht11_init();
   motor_init();
 
+  core1_init();
   sys_timer_init();
 
   while(true)
