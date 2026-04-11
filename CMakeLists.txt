@@ -77,4 +77,8 @@ pico_enable_stdio_uart(${TARGET_NAME} 0)
 
 target_link_libraries(${TARGET_NAME} ${PROJECT_LIBRARIES})
 
+# Add this to your target_link_libraries or target_compile_options
+target_link_options(${TARGET_NAME} PRIVATE "-Wl,--print-memory-usage")
+
+
 pico_add_extra_outputs(${TARGET_NAME})
