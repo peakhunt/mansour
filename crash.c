@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include "pico/stdlib.h"
-#include "hardware/irq.h"
-#include "RP2040.h"
+#include "hardware/sync.h"
 #include "crash.h"
 
 #define CRASH_MSG_BUFFER_SIZE     128
@@ -15,7 +14,7 @@ void __attribute__((noreturn))
 generic_crash(const char *file, int line, const char *fmt, ...)
 {
   // 1. Immediately disable all interrupts to stop core loops/PIO
-  __disable_irq();
+  save_and_disable_interrupts();
 
   // 2. Put critical hardware into a safe state
   // Add other critical hardware safety puts here (e.g., motor PWM to 0)

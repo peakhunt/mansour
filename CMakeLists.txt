@@ -57,8 +57,7 @@ set(PROJECT_LIBRARIES
     hardware_pwm
     m
     hardware_exception
-    hardware_sync
-    cmsis_core)
+    hardware_sync)
 
 add_compile_definitions(SYS_CLK_MHZ=200)
 
