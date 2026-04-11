@@ -59,8 +59,9 @@ main()
   dht11_init();
   motor_init();
 
-  core1_init();
   sys_timer_init();
+
+  core1_init();
 
   while(true)
   {
