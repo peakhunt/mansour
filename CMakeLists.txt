@@ -35,6 +35,7 @@ set(APP_SOURCES main.c
                 dht11.c
                 as5600.c
                 mansour_foc.c
+                crash.c
 )
 
 set(PROJECT_SOURCES
@@ -56,7 +57,8 @@ set(PROJECT_LIBRARIES
     hardware_pwm
     m
     hardware_exception
-    hardware_sync)
+    hardware_sync
+    cmsis_core)
 
 add_compile_definitions(SYS_CLK_MHZ=200)
 
