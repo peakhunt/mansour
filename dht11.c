@@ -6,11 +6,19 @@
 #include "event_dispatcher.h"
 #include "mainloop_timer.h"
 
+#define USE_DHT11     (0)
+
 #define DHT_PIN 15
 
-#define DHT_READ_INTERVAL       500
+#if USE_DHT11 == 1
+#define DHT_READ_INTERVAL       1000
 #define DHT_READ_FAIL_INTERVAL  3000
 #define DHT_PIN_LOW_INTERVAL    30
+#else
+#define DHT_READ_INTERVAL       2000
+#define DHT_READ_FAIL_INTERVAL  3000
+#define DHT_PIN_LOW_INTERVAL    2
+#endif
 
 static SoftTimerElem  _t1;      // read interval timer
 static SoftTimerElem  _t2;      // DHT11 pin low timer to start reading
@@ -74,9 +82,25 @@ dht_handle_read_data(void)
 
   if (calculated_sum == checksum)
   {
+#if USE_DHT11 == 1
     // no negative temperature with dht11? oh my.
     _temperature = temp_h;
     _humidity = hum_h;
+#else
+    // 1. Combine bytes into 16-bit values
+    uint16_t raw_humidity = (hum_h << 8) | hum_l;
+    uint16_t raw_temperature = (temp_h << 8) | temp_l;
+
+    // 2. Calculate Humidity (Value / 10)
+    _humidity = raw_humidity / 10.0f;
+
+    // 3. Calculate Temperature (Handle Negative Bit 15)
+    float temp_val = (raw_temperature & 0x7FFF) / 10.0f;
+    if (raw_temperature & 0x8000) {
+        temp_val *= -1.0f;
+    }
+    _temperature = temp_val;
+#endif
   }
   else
   {
